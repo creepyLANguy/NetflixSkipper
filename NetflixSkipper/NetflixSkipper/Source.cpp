@@ -18,10 +18,8 @@ const char* runMsg = "Running...";
 const char* errMsg = "ERROR\nFile not found: ";
 const char* hitMsg = "Triggered Skip Button at: ";
 
-Mat hwnd2mat(const HWND hwnd) {
-  Mat src;
-  BITMAPINFOHEADER  bi;
-
+Mat hwnd2mat(const HWND hwnd)
+{
   const HDC hwindowDC = GetDC(hwnd);
   const HDC hwindowCompatibleDC = CreateCompatibleDC(hwindowDC);
   SetStretchBltMode(hwindowCompatibleDC, COLORONCOLOR);
@@ -34,10 +32,12 @@ Mat hwnd2mat(const HWND hwnd) {
   const int height = windowsize.bottom;  //change this to whatever size you want to resize to
   const int width = windowsize.right;
 
+  Mat src;
   src.create(height, width, CV_8UC4);
 
   // create a bitmap
   const HBITMAP hbwindow = CreateCompatibleBitmap(hwindowDC, width, height);
+  BITMAPINFOHEADER  bi;
   bi.biSize = sizeof(BITMAPINFOHEADER);    //http://msdn.microsoft.com/en-us/library/windows/window/dd183402%28v=vs.85%29.aspx
   bi.biWidth = width;
   bi.biHeight = -height;  //this is the line that makes it draw upside down or not
@@ -62,11 +62,11 @@ Mat hwnd2mat(const HWND hwnd) {
 }
 
 
-bool NMultipleTemplateMatching(Mat& mInput, Mat& mTemplate, const float thresh, const float closeness, vector<Point2f>& matches)
+void NMultipleTemplateMatching(Mat& mInput, Mat& mTemplate, const float thresh, const float closeness, vector<Point2f>& matches)
 {
   Mat mResult;
-  const Size szTemplate = mTemplate.size();
-  const Size szTemplateCloseRadius((szTemplate.width / 2) * closeness, (szTemplate.height / 2) * closeness);
+  const Size templateSize = mTemplate.size();
+  const Size templateCloseRadius((templateSize.width / 2) * closeness, (templateSize.height / 2) * closeness);
 
   matchTemplate(mInput, mTemplate, mResult, TM_CCOEFF_NORMED);
   threshold(mResult, mResult, thresh, 1.0, THRESH_TOZERO);
@@ -76,18 +76,14 @@ bool NMultipleTemplateMatching(Mat& mInput, Mat& mTemplate, const float thresh, 
     Point minloc, maxloc;
     minMaxLoc(mResult, &minval, &maxval, &minloc, &maxloc);
 
-    if (maxval >= thresh)
-    {
-      matches.push_back(maxloc);
-      rectangle(mResult, Point2f(maxloc.x - szTemplateCloseRadius.width, maxloc.y - szTemplateCloseRadius.height), Point2f(maxloc.x + szTemplateCloseRadius.width, maxloc.y + szTemplateCloseRadius.height), Scalar(0), -1);
-    }
-    else
+    if (maxval < thresh)
     {
       break;
-    }      
-  }
+    }
 
-  return true;
+    matches.push_back(maxloc);
+    rectangle(mResult, Point2f(maxloc.x - templateCloseRadius.width, maxloc.y - templateCloseRadius.height), Point2f(maxloc.x + templateCloseRadius.width, maxloc.y + templateCloseRadius.height), Scalar(0), -1);      
+  }
 }
 
 
@@ -104,7 +100,6 @@ void main()
     cin >> x;
     return;
   }
-
   Mat mTemplate_Gray;
   cvtColor(mTemplate_Bgr, mTemplate_Gray, COLOR_BGR2GRAY);
 
@@ -148,10 +143,10 @@ void main()
 
     int x = 0;
     int y = 0;
-    for (auto a : matches)
+    for (auto match : matches)
     {
-      x += a.x;
-      y += a.y;
+      x += match.x;
+      y += match.y;
     }
     x /= matches.size();
     y /= matches.size();
