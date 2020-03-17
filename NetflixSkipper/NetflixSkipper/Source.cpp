@@ -64,17 +64,17 @@ Mat hwnd2mat(const HWND hwnd)
 
 void NMultipleTemplateMatching(Mat& mInput, Mat& mTemplate, const float thresh, const float closeness, vector<Point2f>& matches)
 {
-  Mat mResult;
+  Mat result;
   const Size templateSize = mTemplate.size();
   const Size templateCloseRadius((templateSize.width / 2) * closeness, (templateSize.height / 2) * closeness);
 
-  matchTemplate(mInput, mTemplate, mResult, TM_CCOEFF_NORMED);
-  threshold(mResult, mResult, thresh, 1.0, THRESH_TOZERO);
+  matchTemplate(mInput, mTemplate, result, TM_CCOEFF_NORMED);
+  threshold(result, result, thresh, 1.0, THRESH_TOZERO);
   while (true)
   {
     double minval, maxval;
     Point minloc, maxloc;
-    minMaxLoc(mResult, &minval, &maxval, &minloc, &maxloc);
+    minMaxLoc(result, &minval, &maxval, &minloc, &maxloc);
 
     if (maxval < thresh)
     {
@@ -82,7 +82,7 @@ void NMultipleTemplateMatching(Mat& mInput, Mat& mTemplate, const float thresh, 
     }
 
     matches.push_back(maxloc);
-    rectangle(mResult, Point2f(maxloc.x - templateCloseRadius.width, maxloc.y - templateCloseRadius.height), Point2f(maxloc.x + templateCloseRadius.width, maxloc.y + templateCloseRadius.height), Scalar(0), -1);      
+    rectangle(result, Point2f(maxloc.x - templateCloseRadius.width, maxloc.y - templateCloseRadius.height), Point2f(maxloc.x + templateCloseRadius.width, maxloc.y + templateCloseRadius.height), Scalar(0), -1);
   }
 }
 
@@ -143,7 +143,7 @@ void main()
 
     int x = 0;
     int y = 0;
-    for (auto match : matches)
+    for (const auto& match : matches)
     {
       x += match.x;
       y += match.y;
