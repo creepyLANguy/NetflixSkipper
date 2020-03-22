@@ -131,7 +131,7 @@ void main()
       continue;
     }
 
-    /*
+#ifdef DEBUG
     for (auto& match : matches)
     {
       rectangle(mResult_Bgr, match, Point(match.x + mTemplate_Bgr.cols, match.y + mTemplate_Bgr.rows), Scalar(0, 255, 0), 2);
@@ -139,7 +139,7 @@ void main()
     namedWindow("Final Results", WINDOW_NORMAL);
     imshow("Final Results", mResult_Bgr);
     waitKey();
-    */
+#endif 
 
     int x = 0;
     int y = 0;
