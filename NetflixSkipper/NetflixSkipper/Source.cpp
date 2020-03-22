@@ -8,7 +8,6 @@
 
 using namespace std;
 const float thresh_minSAD = 0.1;
-float thresh = 0.9;
 BMP src;
 BMP screen;
 
@@ -61,6 +60,8 @@ void TemplateMatch(pair<int, int>& match)
 {
   float minSAD = thresh_minSAD;
 
+  bool breakOutCosTooHighSumAlready = false;
+
   // loop through the search image
   for ( int x = 0; x <= screen.TellWidth() - src.TellWidth(); x++ ) 
   {
@@ -76,6 +77,18 @@ void TemplateMatch(pair<int, int>& match)
               const RGBApixel px_template = src.GetPixel(i, j);
 
               fSAD += abs(px_screen.Red - px_template.Red); // okay cos RGB vals are all same in greyscale
+
+              if (fSAD > minSAD)
+              {
+                breakOutCosTooHighSumAlready = true;
+                break;
+              }
+            }
+
+            if (breakOutCosTooHighSumAlready)
+            {
+              breakOutCosTooHighSumAlready = false;
+              break;
             }
           }
 
@@ -139,7 +152,7 @@ void main()
   }
   ConvertToGreyscale(src);
 
-#ifndef DEBUG
+#ifdef DEBUG
   src.WriteToFile("template.bmp");
 #endif
 
