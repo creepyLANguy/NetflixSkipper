@@ -12,7 +12,8 @@ using namespace cv;
 float thresh = 0.9;
 float closeness = 0.9;
 const char* skipIntroFilename = "skip.jpg";
-const int skipMS = 1000;
+const int scanInterval_MS = 1000;
+const int pauseAfterSkip_MS = 5000;
 
 const char* runMsg = "Running...";
 const char* errMsg = "ERROR\nFile not found: ";
@@ -127,7 +128,7 @@ void main()
 
     if (matches.empty())
     {
-      Sleep(skipMS);
+      Sleep(scanInterval_MS);
       continue;
     }
 
@@ -160,6 +161,7 @@ void main()
     SetCursorPos(p.x, p.y);
 
     cout << hitMsg << "[" << x << "," << y << "]" << endl;
-    Sleep(skipMS);
+
+    Sleep(pauseAfterSkip_MS);
   }
 }
