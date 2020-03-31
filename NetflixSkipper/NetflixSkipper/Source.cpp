@@ -90,6 +90,8 @@ void NMultipleTemplateMatching(Mat& mInput, Mat& mTemplate, const float thresh, 
 
 void main()
 {
+  ShowWindow(GetConsoleWindow(), SW_MINIMIZE);
+
   HWND hDesktopWnd = GetDesktopWindow();
 
   Mat mTemplate_Bgr;      
