@@ -21,6 +21,15 @@
   <ItemGroup>
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NetflixSkipper.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="ico.ico" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4ECB8085-9B47-473C-99AA-D7931B498D43}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
