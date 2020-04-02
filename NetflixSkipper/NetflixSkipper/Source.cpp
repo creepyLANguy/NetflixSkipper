@@ -25,21 +25,22 @@ Mat hwnd2mat(const HWND hwnd)
   const HDC hwindowCompatibleDC = CreateCompatibleDC(hwindowDC);
   SetStretchBltMode(hwindowCompatibleDC, COLORONCOLOR);
 
-  RECT windowsize;    // get the height and width of the screen
+  RECT windowsize;  //get the height and width of the screen
   GetClientRect(hwnd, &windowsize);
 
   const int srcheight = windowsize.bottom;
   const int srcwidth = windowsize.right;
-  const int height = windowsize.bottom;  //change this to whatever size you want to resize to
+  const int height = windowsize.bottom; //change this to whatever size you want to resize to
   const int width = windowsize.right;
 
   Mat src;
   src.create(height, width, CV_8UC4);
 
-  // create a bitmap
+  //create a bitmap
   const HBITMAP hbwindow = CreateCompatibleBitmap(hwindowDC, width, height);
   BITMAPINFOHEADER  bi;
-  bi.biSize = sizeof(BITMAPINFOHEADER);    //http://msdn.microsoft.com/en-us/library/windows/window/dd183402%28v=vs.85%29.aspx
+  //http://msdn.microsoft.com/en-us/library/windows/window/dd183402%28v=vs.85%29.aspx
+  bi.biSize = sizeof(BITMAPINFOHEADER);
   bi.biWidth = width;
   bi.biHeight = -height;  //this is the line that makes it draw upside down or not
   bi.biPlanes = 1;
@@ -54,8 +55,13 @@ Mat hwnd2mat(const HWND hwnd)
   // use the previously created device context with the bitmap
   SelectObject(hwindowCompatibleDC, hbwindow);
   // copy from the window device context to the bitmap device context
-  StretchBlt(hwindowCompatibleDC, 0, 0, width, height, hwindowDC, 0, 0, srcwidth, srcheight, SRCCOPY); //change SRCCOPY to NOTSRCCOPY for wacky colors !
-  GetDIBits(hwindowCompatibleDC, hbwindow, 0, height, src.data, reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS);  //copy from hwindowCompatibleDC to hbwindow
+  StretchBlt(
+    hwindowCompatibleDC, 0, 0, width, height, 
+    hwindowDC, 0, 0, srcwidth, srcheight, SRCCOPY); //change SRCCOPY to NOTSRCCOPY for wacky colors!
+
+  GetDIBits(
+    hwindowCompatibleDC, hbwindow, 0, height, 
+    src.data, reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS);  //copy from hwindowCompatibleDC to hbwindow
 
   DeleteObject(hbwindow); DeleteDC(hwindowCompatibleDC); ReleaseDC(hwnd, hwindowDC);
 
@@ -63,14 +69,15 @@ Mat hwnd2mat(const HWND hwnd)
 }
 
 
-void NMultipleTemplateMatching(Mat& mInput, Mat& mTemplate, const float thresh, const float closeness, vector<Point2f>& matches)
+void DoMultipleTemplateMatching(Mat& input, Mat& tmp, const float thresh, const float closeness, vector<Point2f>& matches)
 {
   Mat result;
-  const Size templateSize = mTemplate.size();
+  const Size templateSize = tmp.size();
   const Size templateCloseRadius((templateSize.width / 2) * closeness, (templateSize.height / 2) * closeness);
 
-  matchTemplate(mInput, mTemplate, result, TM_CCOEFF_NORMED);
+  matchTemplate(input, tmp, result, TM_CCOEFF_NORMED);
   threshold(result, result, thresh, 1.0, THRESH_TOZERO);
+
   while (true)
   {
     double minval, maxval;
@@ -83,28 +90,31 @@ void NMultipleTemplateMatching(Mat& mInput, Mat& mTemplate, const float thresh, 
     }
 
     matches.push_back(maxloc);
-    rectangle(result, Point2f(maxloc.x - templateCloseRadius.width, maxloc.y - templateCloseRadius.height), Point2f(maxloc.x + templateCloseRadius.width, maxloc.y + templateCloseRadius.height), Scalar(0), -1);
+    rectangle(
+      result, 
+      Point2f(maxloc.x - templateCloseRadius.width, maxloc.y - templateCloseRadius.height), 
+      Point2f(maxloc.x + templateCloseRadius.width, maxloc.y + templateCloseRadius.height), 
+      Scalar(0), -1);
   }
 }
 
 
 void main()
 {
-  ShowWindow(GetConsoleWindow(), SW_MINIMIZE);
-
-  HWND hDesktopWnd = GetDesktopWindow();
-
-  Mat mTemplate_Bgr;      
-  mTemplate_Bgr = imread(skipIntroFilename, 1);
-  if (mTemplate_Bgr.rows == 0)
+  Mat template_bgr;      
+  template_bgr = imread(skipIntroFilename, 1);
+  if (template_bgr.rows == 0)
   {
     cout << errMsg << skipIntroFilename << endl;
     int x;
     cin >> x;
     return;
   }
-  Mat mTemplate_Gray;
-  cvtColor(mTemplate_Bgr, mTemplate_Gray, COLOR_BGR2GRAY);
+
+  ShowWindow(GetConsoleWindow(), SW_MINIMIZE);
+
+  Mat template_grey;
+  cvtColor(template_bgr, template_grey, COLOR_BGR2GRAY);
 
   INPUT input;
   input.type = INPUT_MOUSE;
@@ -117,16 +127,18 @@ void main()
 
   cout << runMsg << endl;
 
+  HWND hDesktopWnd = GetDesktopWindow();
+
   while (true)
   {
     Mat mScreenShot = hwnd2mat(hDesktopWnd);
     
-    Mat mResult_Bgr = mScreenShot.clone();
-    Mat mSource_Gray;
-    cvtColor(mScreenShot, mSource_Gray, COLOR_BGR2GRAY);
+    Mat result_bgr = mScreenShot.clone();
+    Mat source_grey;
+    cvtColor(mScreenShot, source_grey, COLOR_BGR2GRAY);
 
     vector<Point2f> matches;
-    NMultipleTemplateMatching(mSource_Gray, mTemplate_Gray, thresh, closeness, matches);
+    DoMultipleTemplateMatching(source_grey, template_grey, thresh, closeness, matches);
 
     if (matches.empty())
     {
@@ -137,10 +149,16 @@ void main()
 #ifdef DEBUG
     for (auto& match : matches)
     {
-      rectangle(mResult_Bgr, match, Point(match.x + mTemplate_Bgr.cols, match.y + mTemplate_Bgr.rows), Scalar(0, 255, 0), 2);
+      rectangle(
+        result_bgr, 
+        match, 
+        Point(match.x + template_bgr.cols, 
+          match.y + template_bgr.rows), 
+        Scalar(0, 255, 0),
+        2);
     }   
     namedWindow("Final Results", WINDOW_NORMAL);
-    imshow("Final Results", mResult_Bgr);
+    imshow("Final Results", result_bgr);
     waitKey();
 #endif 
 
@@ -153,8 +171,8 @@ void main()
     }
     x /= matches.size();
     y /= matches.size();
-    x += mTemplate_Bgr.cols / 2;
-    y += mTemplate_Bgr.rows / 2;
+    x += template_bgr.cols / 2;
+    y += template_bgr.rows / 2;
 
     POINT p;
     GetCursorPos(&p);
