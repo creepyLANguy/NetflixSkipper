@@ -9,8 +9,8 @@ using namespace std;
 using namespace cv;
 
 
-float thresh = 0.9;
-float closeness = 0.9;
+const float thresh = 0.9;
+const float closeness = 0.9;
 const char* skipIntroFilename = "skip.jpg";
 const int scanInterval_MS = 1000;
 const int pauseAfterSkip_MS = 5000;
@@ -18,6 +18,7 @@ const int pauseAfterSkip_MS = 5000;
 const char* runMsg = "Running...";
 const char* errMsg = "ERROR\nFile not found: ";
 const char* hitMsg = "Triggered Skip Button at: ";
+
 
 Mat hwnd2mat(const HWND hwnd)
 {
@@ -99,6 +100,23 @@ void DoMultipleTemplateMatching(Mat& input, Mat& tmp, const float thresh, const 
 }
 
 
+void ShowResults(const vector<Point_<float>>& matches, const Mat& screenShot, const Mat& template_bgr)
+{
+  for (auto& match : matches)
+  {
+    rectangle(
+      screenShot,
+      match,
+      Point(match.x + template_bgr.cols,
+        match.y + template_bgr.rows),
+      Scalar(0, 255, 0),
+      2);
+  }
+  namedWindow("Final Results", WINDOW_NORMAL);
+  imshow("Final Results", screenShot);
+  waitKey();
+}
+
 void main()
 {
   Mat template_bgr;      
@@ -131,14 +149,12 @@ void main()
 
   while (true)
   {
-    Mat mScreenShot = hwnd2mat(hDesktopWnd);
-    
-    Mat result_bgr = mScreenShot.clone();
-    Mat source_grey;
-    cvtColor(mScreenShot, source_grey, COLOR_BGR2GRAY);
+    Mat screenShot = hwnd2mat(hDesktopWnd);
+    Mat screenShot_grey;
+    cvtColor(screenShot, screenShot_grey, COLOR_BGR2GRAY);
 
     vector<Point2f> matches;
-    DoMultipleTemplateMatching(source_grey, template_grey, thresh, closeness, matches);
+    DoMultipleTemplateMatching(screenShot_grey, template_grey, thresh, closeness, matches);
 
     if (matches.empty())
     {
@@ -147,19 +163,7 @@ void main()
     }
 
 #ifdef DEBUG
-    for (auto& match : matches)
-    {
-      rectangle(
-        result_bgr, 
-        match, 
-        Point(match.x + template_bgr.cols, 
-          match.y + template_bgr.rows), 
-        Scalar(0, 255, 0),
-        2);
-    }   
-    namedWindow("Final Results", WINDOW_NORMAL);
-    imshow("Final Results", result_bgr);
-    waitKey();
+    ShowResults(matches, screenShot, template_bgr);
 #endif 
 
     int x = 0;
